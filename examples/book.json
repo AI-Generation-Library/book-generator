@@ -1,0 +1,17 @@
+{
+  "id": "my-learning-guide",
+  "title": "나의 학습 안내서",
+  "subject": "학습 목표를 정하고 예제와 검증 계획을 만드는 방법",
+  "audience": "새 주제를 체계적으로 배우고 싶은 독자",
+  "language": "한국어",
+  "tags": ["학습", "입문"],
+  "chapter_count": 3,
+  "outline": "학습 계획, 개념과 예제, 검증과 회고 순으로 구성",
+  "references": "",
+  "provider": "openai",
+  "model": "",
+  "workspace_id": "",
+  "max_output_tokens": 6000,
+  "output_budget": 30000,
+  "demo": false
+}
