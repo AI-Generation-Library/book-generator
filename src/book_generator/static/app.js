@@ -47,9 +47,10 @@ function renderJobs() {
     const card = node("article", "job");
     const top = node("div", "job-top");
     const heading = node("div");
-    heading.append(node("p", "eyebrow", job.config.demo ? "OFFLINE DEMO" : job.config.provider.toUpperCase()));
+    const imported = job.origin === "external-manuscript";
+    heading.append(node("p", "eyebrow", imported ? "AUTHORED MANUSCRIPT" : job.config.demo ? "OFFLINE DEMO" : job.config.provider.toUpperCase()));
     heading.append(node("h3", "", job.config.title));
-    heading.append(node("p", "job-meta", `${job.config.id} · ${job.config.chapter_count}장 · ${job.config.demo ? "데모 원고" : job.config.model}`));
+    heading.append(node("p", "job-meta", `${job.config.id} · ${job.config.chapter_count}장 · ${imported ? job.author + " · 외부 작성 원고" : job.config.demo ? "데모 원고" : job.config.model}`));
     top.append(heading, node("span", `status ${job.status}`, labels[job.status] || job.status));
     card.append(top, node("p", "job-stage", job.message));
     const track = node("div", "progress-track");

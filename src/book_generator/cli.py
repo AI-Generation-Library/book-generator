@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from .book_metadata import validate_book
 from .engine import create_run, execute, load_state
 from .manuscript import export_book
-from .models import BookConfig
+from .models import BookConfig, BookPlan
 from .providers import Provider
 from .storage import canonical
 
@@ -67,6 +67,13 @@ def parser():
     export = commands.add_parser("export", help="books 체크아웃에 원고 복사 (덮어쓰기 금지)")
     export.add_argument("run", type=Path)
     export.add_argument("--books", required=True, type=Path)
+    package = commands.add_parser("package", help="외부 작성 원고를 목차에 맞춰 정리 (API 호출 없음)")
+    package.add_argument("--config", required=True, type=Path)
+    package.add_argument("--plan", required=True, type=Path)
+    package.add_argument("--manuscript", required=True, type=Path)
+    package.add_argument("--author", required=True, help="실제 작성자/AI 도구")
+    package.add_argument("--author-model", default=None, help="확인된 모델 ID만 지정; 모르면 생략")
+    package.add_argument("--output", type=Path, default=Path("generated"))
     return root
 
 
@@ -96,6 +103,17 @@ def main(argv=None) -> int:
         if args.command == "validate":
             meta = validate_book(canonical(args.book))
             print(f"콘텐츠 형식 검사 통과: {meta['id']} · {len(meta['chapters'])}장 (내용 검수는 별도)")
+            return 0
+        if args.command == "package":
+            from .packaging import package_manuscript
+
+            config = BookConfig.model_validate_json(args.config.read_text(encoding="utf-8-sig"))
+            plan = BookPlan.model_validate_json(args.plan.read_text(encoding="utf-8-sig"))
+            run = package_manuscript(
+                args.output, config, plan, args.manuscript, args.author, args.author_model
+            )
+            state = load_state(run)
+            print(f"원고 정리 완료 (API 호출 없음)\n작업 폴더: {run}\nZIP: {run / state['archive']}")
             return 0
         if args.command == "export":
             target = export_book(canonical(args.run), args.books)

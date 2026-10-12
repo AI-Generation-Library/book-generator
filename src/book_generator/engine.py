@@ -54,7 +54,7 @@ def create_run(root: Path, config: BookConfig, key: str = "") -> Path:
 
 def public_state(run: Path) -> dict:
     state = load_state(run)
-    return {
+    result = {
         key: state[key]
         for key in (
             "run_id",
@@ -71,6 +71,8 @@ def public_state(run: Path) -> dict:
             "archive",
         )
     }
+    result.update(origin=state.get("origin", "api"), author=state.get("author"))
+    return result
 
 
 class BudgetPause(Exception):

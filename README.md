@@ -79,6 +79,16 @@ book-generator validate "generated/<run-id>/book/<book-id>"
 
 ## books에 기여하기
 
+### 이미 작성한 원고 정리하기
+
+이 대화에서 Codex가 집필했거나 저자가 따로 작성한 원고는 `package`로 정리할 수 있습니다. API 키와 모델을 입력하지 않으며 목차를 다시 생성하지 않습니다. 원고는 `01-chapter/chapter.md`, `02-chapter/chapter.md` 순서로 준비하고, 승인 목차 JSON에는 `description`, `parts[].title`, `parts[].chapters[]`의 `title`·`summary`·`objectives`를 기록합니다. `appendices/`, `templates/`, `examples/`의 공개 텍스트 자료도 포함합니다.
+
+```powershell
+book-generator package --config book.json --plan approved-plan.json --manuscript manuscript --author Codex
+```
+
+`--author`에는 실제 작성자 또는 AI 도구를 입력합니다. 확인한 모델 ID가 있을 때만 `--author-model`을 지정하고, 모르면 생략해 `null`로 기록합니다. 이 모드는 외부 작성 원고임을 표시하고 원고·메타데이터·ZIP을 정리하며, API로 생성했다고 기록하지 않습니다. 형식 검사와 내용 검수는 구분합니다.
+
 완성된 책의 사실·출처·예제·라이선스를 검토하고 실제 확인한 범위를 기록하세요. 생성기는 원고를 `draft`·`unreviewed`로 표시하며 코드 실행, URL 조회, 사람 검수를 수행했다고 주장하지 않습니다. 데모 원고는 데모임을 명시합니다.
 
 ```powershell

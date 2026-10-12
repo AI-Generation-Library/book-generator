@@ -66,7 +66,7 @@ def write_artifact(run: Path, state: dict, relative: str, text: str):
     state["files"][relative] = digest(path)
 
 
-def finalize(run: Path, state: dict, config: BookConfig, plan: BookPlan):
+def finalize(run: Path, state: dict, config: BookConfig, plan: BookPlan, *, authorship: dict | None = None):
     book_rel = f"book/{config.id}"
     book = inside(run, book_rel)
     today = date.today().isoformat()
@@ -105,7 +105,16 @@ def finalize(run: Path, state: dict, config: BookConfig, plan: BookPlan):
         "parts": parts,
         "downloads": [],
     }
-    toc = "\n".join(f"- [{item['number']:02d}장. {item['title']}]({item['href']})" for item in chapters)
+    if authorship is not None:
+        meta["provenance"].update(authorship)
+    toc = "\n\n".join(
+        f"### {part['number']}부. {part['title']}\n\n"
+        + "\n".join(
+            f"- [{item['number']:02d}장. {item['title']}]({item['href']})"
+            for item in chapters[part["first"] - 1 : part["last"]]
+        )
+        for part in parts
+    )
     intro = frontmatter(config.title, plan.description, config, bookHome=True)
     intro += f"# {config.title}\n\n{plan.description}\n\n> AI로 작성한 미검수 초안입니다."
     if config.demo:
@@ -113,14 +122,23 @@ def finalize(run: Path, state: dict, config: BookConfig, plan: BookPlan):
     intro += f"\n\n## 목차\n\n{toc}\n\n[검증 상태](appendices/verification)\n"
     verification = frontmatter("생성 기록과 검증 범위", "AI 초안의 검증 상태", config)
     verification += "# 생성 기록과 검증 범위\n\n이 원고는 **미검수 초안**입니다. 파일 형식 검사는 내용의 정확도를 보증하지 않습니다.\n\n"
-    verification += f"- 제공자: {'offline-demo' if config.demo else config.provider}\n- 요청 모델: {config.model or '없음 (데모)'}\n"
+    verification += f"- 생성 도구: {meta['provenance']['generator']}\n"
+    verification += f"- 제공자/작성 경로: {meta['provenance']['provider']}\n"
+    verification += f"- 확인된 모델: {meta['provenance']['model'] or '확인되지 않음'}\n"
+    if authorship is not None:
+        verification += "- 이 도구의 외부 AI API 호출: 없음. 저자가 제공한 원고를 정리했습니다.\n"
     verification += "- 사실 확인·출처 검토·코드 실행·사람 검수: 미수행\n- 참고 URL 자동 조회: 미수행\n\n"
     verification += "원고를 공개하기 전에 설명과 예제, 참고 자료, 라이선스를 검토하고 확인한 범위를 book.json에 기록하세요.\n"
     for relative, text in {
         "index.md": intro,
         "appendices/verification.md": verification,
         "book.json": json.dumps(meta, ensure_ascii=False, indent=2) + "\n",
-        "generation-input.json": config.model_dump_json(indent=2) + "\n",
+        "generation-input.json": json.dumps(
+            {"config": config.model_dump(), "authorship": authorship}, ensure_ascii=False, indent=2
+        )
+        + "\n"
+        if authorship is not None
+        else config.model_dump_json(indent=2) + "\n",
     }.items():
         write_artifact(run, state, f"{book_rel}/{relative}", text)
     validate_book(book)
